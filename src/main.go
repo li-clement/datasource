@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-type Dataset struct {
+type KG_Dataset struct {
 	Id                   int     `json:"id"`
 	Ref                  string  `json:"ref,omitempty"`
 	Subtitle             string  `json:"subtitle,omitempty"`
@@ -32,9 +32,24 @@ type Dataset struct {
 	UsabilityRating      float32 `json:"usabilityRating,omitempty"`
 }
 
-func initdump() {
-	var Datasets []Dataset
-	file, err := os.Create("src/dataset.csv")
+type HF_Dataset struct {
+	Id               int      `json:"_id"`
+	Name             int      `json:"id,omitempty"`
+	Sha              string   `json:"sha,omitempty"`
+	LastModified     string   `json:"lastModified,omitempty"`
+	Private          bool     `json:"private,omitempty"`
+	Gated            bool     `json:"gated,omitempty"`
+	Citation         string   `json:"citation,omitempty"`
+	Description      string   `json:"description,omitempty"`
+	Download         int      `json:"downloads,omitempty"`
+	PaperswithcodeId bool     `json:"paperswithcode_id,omitempty"`
+	Tags             []string `json:"tags,omitempty"`
+	Key              string   `json:"key,omitempty"`
+}
+
+func huggingface_dump() {
+	var Datasets []KG_Dataset
+	file, err := os.Create("src/hf_dataset.csv")
 	filepath := "src/dataset.csv"
 	if err != nil {
 		panic(err)
@@ -85,8 +100,8 @@ func initdump() {
 	}
 }
 
-func redump() {
-	var Datasets []Dataset
+func kaggle_dump() {
+	var Datasets []KG_Dataset
 	filepath := "src/dataset.csv"
 	for i := 1; i <= 1; i++ {
 		url := "https://www.kaggle.com/api/v1/datasets/list?page=" + strconv.Itoa(i)
@@ -129,6 +144,6 @@ func redump() {
 }
 
 func main() {
-	initdump()
-	//redump()
+	//initdump()
+	kaggle_dump()
 }
