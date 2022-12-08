@@ -16,3 +16,4 @@
 *.csv
 src/*.csv
 src/*.json
+temp
