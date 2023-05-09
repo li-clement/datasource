@@ -137,6 +137,7 @@ type HF_Dataset struct {
 
 func huggingface_dump() {
 	var Datasets []HF_Dataset
+	strType := ""
 	file, err := os.Create("src/hf_dataset.csv")
 	filepath := "src/hf_dataset.csv"
 	if err != nil {
@@ -161,6 +162,7 @@ func huggingface_dump() {
 		"outlet_licensed",
 		"hash_code",
 		"data_size",
+		"task_type",
 		"format",
 		"description",
 		"is_personal_data",
@@ -180,7 +182,7 @@ func huggingface_dump() {
 	url := "https://huggingface.co/api/datasets?full=full"
 	method := "GET"
 	client := &http.Client{}
-	req, err := http.NewRequest(method, url, nil)
+	req, _ := http.NewRequest(method, url, nil)
 	req.Header.Add("Authorization", "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")
 	file, err = os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
 	w1 = csv.NewWriter(file)
@@ -195,6 +197,8 @@ func huggingface_dump() {
 	}
 	defer res.Body.Close()
 
+	//aa := res.Header["Link"]
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
@@ -202,6 +206,13 @@ func huggingface_dump() {
 	}
 	json.Unmarshal(body, &Datasets)
 	for _, dataset := range Datasets {
+		for _, tag := range dataset.CardData.TaskCategories {
+			if strType != "" {
+				strType = strType + ","
+			}
+			strType = strType + tag
+		}
+
 		w1.Write([]string{
 			dataset.ID,
 			dataset.CardData.PrettyName,
@@ -217,6 +228,7 @@ func huggingface_dump() {
 			"True",
 			dataset.Sha,
 			strconv.Itoa(dataset.CardData.DatasetInfo.DownloadSize),
+			strType,
 			"",
 			dataset.Description,
 			"",
@@ -230,22 +242,64 @@ func huggingface_dump() {
 			"",
 			"",
 			"",
-			fmt.Sprintf("%f", dataset.Disabled)})
+			strconv.Itoa(Bool2int(dataset.Disabled))})
 		w1.Flush()
 		fmt.Println("Now dump ...")
+		strType = ""
 	}
 }
 
 func kaggle_dump() {
 	var Datasets []KG_Dataset
+	strType := ""
+	file, err := os.Create("src/kg_dataset.csv")
 	filepath := "src/kg_dataset.csv"
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	file.WriteString("\xEF\xBB\xBF")
+	w1 := csv.NewWriter(file)
+
+	w1.Write([]string{
+		"id",
+		"dataset_name",
+		"dataset_version",
+		"license_id",
+		"license_name",
+		"licensor",
+		"license_from",
+		"license_location",
+		"license_content",
+		"origin",
+		"downloaded_outlet",
+		"outlet_licensed",
+		"hash_code",
+		"data_size",
+		"task_type",
+		"format",
+		"description",
+		"is_personal_data",
+		"currentVersionNumber",
+		"is_additional_verify",
+		"is_offensive_content",
+		"collection_process",
+		"restrictions",
+		"is_comply",
+		"restriction_notes",
+		"dataset_collect_method",
+		"additional_notes",
+		"challenges",
+		"available"})
+	w1.Flush()
+
 	for i := 1; i <= 1; i++ {
 		url := "https://www.kaggle.com/api/v1/datasets/list?page=" + strconv.Itoa(i)
 		method := "GET"
 
 		client := &http.Client{}
 		req, err := http.NewRequest(method, url, nil)
-		req.SetBasicAuth("clementlee1987", "986d3695525944f46e186c051bfc30b8")
+		req.SetBasicAuth("clementlee1987", "54c805ae4953af785d83978f72bd4fe9")
 
 		file, err := os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
 		w1 := csv.NewWriter(file)
@@ -267,35 +321,59 @@ func kaggle_dump() {
 		}
 		json.Unmarshal(body, &Datasets)
 		for _, dataset := range Datasets {
+			for _, tag := range dataset.Tags {
+				if strType != "" {
+					strType = strType + ","
+				}
+				strType = strType + tag.Name
+			}
 			w1.Write([]string{
-				strconv.Itoa(dataset.Id),
-				dataset.Ref,
-				dataset.Subtitle,
-				dataset.CreatorName,
-				dataset.CreatorUrl,
-				strconv.Itoa(dataset.TotalBytes),
-				dataset.Url,
-				dataset.LastUpdated,
-				strconv.Itoa(dataset.DownloadCount),
-				strconv.FormatBool(dataset.IsPrivate),
-				strconv.FormatBool(dataset.IsFeatured),
-				dataset.LicenseName,
-				dataset.Description,
-				dataset.OwnerName,
-				dataset.OwnerRef,
-				strconv.Itoa(dataset.KernelCount),
+				strconv.Itoa(dataset.ID),
 				dataset.Title,
 				strconv.Itoa(dataset.CurrentVersionNumber),
+				"",
+				dataset.LicenseName,
+				dataset.CreatorName,
+				"",
+				"",
+				dataset.LicenseName,
+				dataset.URL,
+				"Kaggle",
+				"Kaggle Term of use",
+				"",
+				strconv.Itoa(dataset.TotalBytes),
+				strType,
+				"",
+				dataset.Description,
+				strconv.FormatBool(dataset.IsPrivate),
+				strconv.Itoa(dataset.CurrentVersionNumber),
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
 				fmt.Sprintf("%f", dataset.UsabilityRating)})
 			w1.Flush()
-			fmt.Println("Now dump " + strconv.Itoa(dataset.Id))
+			fmt.Println("Now dump " + strconv.Itoa(dataset.ID))
+			strType = ""
 		}
 
 	}
 }
 
+func Bool2int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 func main() {
 	//initdump()
-	//huggingface_dump()
-	kaggle_dump()
+	huggingface_dump()
+	//kaggle_dump()
 }
