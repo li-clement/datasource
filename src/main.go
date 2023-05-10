@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/peterhellberg/link"
 )
 
 type KG_Dataset struct {
@@ -138,8 +140,9 @@ type HF_Dataset struct {
 func huggingface_dump() {
 	var Datasets []HF_Dataset
 	strType := ""
-	file, err := os.Create("src/hf_dataset.csv")
-	filepath := "src/hf_dataset.csv"
+	sizeCatagory := "0"
+	file, err := os.Create("hf_dataset.csv")
+	filepath := "hf_dataset.csv"
 	if err != nil {
 		panic(err)
 	}
@@ -176,84 +179,118 @@ func huggingface_dump() {
 		"dataset_collect_method",
 		"additional_notes",
 		"challenges",
-		"available"})
+		"available",
+		"size_catagory",
+		"downloads",
+		"like",
+		"update_at"})
 	w1.Flush()
-
 	url := "https://huggingface.co/api/datasets?full=full"
 	method := "GET"
 	client := &http.Client{}
-	req, _ := http.NewRequest(method, url, nil)
-	req.Header.Add("Authorization", "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")
-	file, err = os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
-	w1 = csv.NewWriter(file)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer res.Body.Close()
+	for {
+		if url == "" {
+			return
+		}
+		fmt.Println("new dump:" + url)
+		req, _ := http.NewRequest(method, url, nil)
 
-	//aa := res.Header["Link"]
+		req.Header.Add("Authorization", "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")
+		file, err = os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
+		w1 = csv.NewWriter(file)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	json.Unmarshal(body, &Datasets)
-	for _, dataset := range Datasets {
-		for _, tag := range dataset.CardData.TaskCategories {
-			if strType != "" {
-				strType = strType + ","
+		for _, l := range link.ParseResponse(res) {
+			//fmt.Printf("URI: %q, Rel: %q, Extra: %+v\n", l.URI, l.Rel, l.Extra)
+			// URI: "https://api.github.com/search/code?q=Println+user%3Agolang&page=2", Rel: "next", Extra: map[]
+			// URI: "https://api.github.com/search/code?q=Println+user%3Agolang&page=34", Rel: "last", Extra: map[]
+			if l.Rel == "next" {
+				url = l.URI
 			}
-			strType = strType + tag
 		}
 
-		w1.Write([]string{
-			dataset.ID,
-			dataset.CardData.PrettyName,
-			"",
-			"",
-			strings.Join(dataset.CardData.License, ","),
-			dataset.Citation,
-			"HuggingFace",
-			"",
-			"",
-			"",
-			"HuggingFace",
-			"True",
-			dataset.Sha,
-			strconv.Itoa(dataset.CardData.DatasetInfo.DownloadSize),
-			strType,
-			"",
-			dataset.Description,
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			strconv.Itoa(Bool2int(dataset.Disabled))})
-		w1.Flush()
-		fmt.Println("Now dump ...")
-		strType = ""
+		//aa := res.Header["Link"]
+
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		json.Unmarshal(body, &Datasets)
+		for _, dataset := range Datasets {
+			for _, tag := range dataset.CardData.TaskCategories {
+				if strType != "" {
+					strType = strType + ","
+				}
+				strType = strType + tag
+			}
+
+			if len(dataset.CardData.SizeCategories) != 0 {
+				//fmt.Println(dataset.CardData.SizeCategories)
+				sizeCatagory = dataset.CardData.SizeCategories[0]
+			}
+
+			w1.Write([]string{
+				dataset.ID,
+				dataset.CardData.PrettyName,
+				"",
+				"",
+				strings.Join(dataset.CardData.License, ","),
+				dataset.Citation,
+				"HuggingFace",
+				"",
+				"",
+				"",
+				"HuggingFace",
+				"True",
+				dataset.Sha,
+				strconv.Itoa(dataset.CardData.DatasetInfo.DownloadSize),
+				strType,
+				"",
+				dataset.Description,
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				strconv.Itoa(Bool2int(dataset.Disabled)),
+				sizeCatagory,
+				strconv.Itoa(dataset.Downloads),
+				strconv.Itoa(dataset.Likes),
+				dataset.LastModified.String(),
+			})
+			w1.Flush()
+			//fmt.Println("Now dump ...")
+			strType = ""
+		}
+		if link.ParseResponse(res) == nil {
+			w1.Flush()
+			return
+		}
+		fmt.Println(url)
 	}
 }
 
 func kaggle_dump() {
 	var Datasets []KG_Dataset
 	strType := ""
-	file, err := os.Create("src/kg_dataset.csv")
-	filepath := "src/kg_dataset.csv"
+	file, err := os.Create("kg_dataset.csv")
+	filepath := "kg_dataset.csv"
 	if err != nil {
 		panic(err)
 	}
