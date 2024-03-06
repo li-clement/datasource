@@ -4,11 +4,10 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/peterhellberg/link"
@@ -94,7 +93,9 @@ type HF_Dataset struct {
 		AnnotationsCreators []string `json:"annotations_creators"`
 		LanguageCreators    []string `json:"language_creators"`
 		Language            []string `json:"language"`
-		License             []string `json:"license"`
+		License             string   `json:"license"`
+		LicenseName         string   `json:"license_name"`
+		LicenseLink         string   `json:"license_link"`
 		Multilinguality     []string `json:"multilinguality"`
 		SizeCategories      []string `json:"size_categories"`
 		SourceDatasets      []string `json:"source_datasets"`
@@ -155,7 +156,9 @@ func huggingface_dump() {
 		"dataset_name",
 		"dataset_version",
 		"license_id",
+		"license",
 		"license_name",
+		"license_link",
 		"licensor",
 		"license_from",
 		"license_location",
@@ -220,7 +223,7 @@ func huggingface_dump() {
 
 		//aa := res.Header["Link"]
 
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -244,7 +247,12 @@ func huggingface_dump() {
 				dataset.CardData.PrettyName,
 				"",
 				"",
-				strings.Join(dataset.CardData.License, ","),
+				//strings.Join(dataset.CardData.License, ","),
+				//strings.Join(dataset.CardData.LicenseName, ","),
+				//strings.Join(dataset.CardData.LicenseLink, ","),
+				dataset.CardData.License,
+				dataset.CardData.LicenseName,
+				dataset.CardData.LicenseLink,
 				dataset.Citation,
 				"HuggingFace",
 				"",
@@ -351,7 +359,7 @@ func kaggle_dump() {
 		}
 		defer res.Body.Close()
 
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			fmt.Println(err)
 			return
