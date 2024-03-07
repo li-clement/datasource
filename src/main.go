@@ -93,17 +93,18 @@ type HF_Dataset struct {
 		AnnotationsCreators []string `json:"annotations_creators"`
 		LanguageCreators    []string `json:"language_creators"`
 		Language            []string `json:"language"`
-		License             string   `json:"license"`
-		LicenseName         string   `json:"license_name"`
-		LicenseLink         string   `json:"license_link"`
-		Multilinguality     []string `json:"multilinguality"`
-		SizeCategories      []string `json:"size_categories"`
-		SourceDatasets      []string `json:"source_datasets"`
-		TaskCategories      []string `json:"task_categories"`
-		TaskIds             []string `json:"task_ids"`
-		PaperswithcodeID    string   `json:"paperswithcode_id"`
-		PrettyName          string   `json:"pretty_name"`
-		TrainEvalIndex      []struct {
+		//License             []string `json:"license"`
+		License          string   `json:"license"`
+		LicenseName      string   `json:"license_name"`
+		LicenseLink      string   `json:"license_link"`
+		Multilinguality  []string `json:"multilinguality"`
+		SizeCategories   []string `json:"size_categories"`
+		SourceDatasets   []string `json:"source_datasets"`
+		TaskCategories   []string `json:"task_categories"`
+		TaskIds          []string `json:"task_ids"`
+		PaperswithcodeID string   `json:"paperswithcode_id"`
+		PrettyName       string   `json:"pretty_name"`
+		TrainEvalIndex   []struct {
 			Config string `json:"config"`
 			Task   string `json:"task"`
 			TaskID string `json:"task_id"`
@@ -153,9 +154,11 @@ func huggingface_dump() {
 
 	w1.Write([]string{
 		"id",
+		"dataset_fullname",
 		"dataset_name",
 		"dataset_version",
 		"license_id",
+		//"license_set",
 		"license",
 		"license_name",
 		"license_link",
@@ -245,11 +248,13 @@ func huggingface_dump() {
 			w1.Write([]string{
 				dataset.ID,
 				dataset.CardData.PrettyName,
+				dataset.Name,
 				"",
 				"",
 				//strings.Join(dataset.CardData.License, ","),
 				//strings.Join(dataset.CardData.LicenseName, ","),
 				//strings.Join(dataset.CardData.LicenseLink, ","),
+				//strings.Join(dataset.CardData.LicenseSet, ","),
 				dataset.CardData.License,
 				dataset.CardData.LicenseName,
 				dataset.CardData.LicenseLink,
