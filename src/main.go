@@ -317,8 +317,13 @@ func huggingface_dump() {
 		fmt.Println("new dump:" + url)
 		req, _ := http.NewRequest(method, url, nil)
 
-		req.Header.Add("Authorization", "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")
+		req.Header.Add("Authorization", "XXXXXXXXXXXXXXXXXXXXXXXX")
 		file, err = os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer file.Close()
 		w1 = csv.NewWriter(file)
 		if err != nil {
 			fmt.Println(err)

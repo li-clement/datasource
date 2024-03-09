@@ -16,3 +16,4 @@
 src/*.csv
 src/*.json
 temp
+Auth.txt
