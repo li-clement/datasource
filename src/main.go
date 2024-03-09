@@ -316,6 +316,10 @@ func huggingface_dump() {
 		}
 		fmt.Println("new dump:" + url)
 		req, _ := http.NewRequest(method, url, nil)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
 		req.Header.Add("Authorization", "XXXXXXXXXXXXXXXXXXXXXXXX")
 		file, err = os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
