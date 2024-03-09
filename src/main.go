@@ -13,6 +13,38 @@ import (
 	"github.com/peterhellberg/link"
 )
 
+type LicenseDetail struct {
+	Key                  string   `json:"key"`
+	ShortName            string   `json:"short_name"`
+	Name                 string   `json:"name"`
+	Category             string   `json:"category"`
+	Owner                string   `json:"owner"`
+	HomepageURL          string   `json:"homepage_url"`
+	Notes                string   `json:"notes"`
+	SpdxLicenseKey       string   `json:"spdx_license_key"`
+	OtherSpdxLicenseKeys []string `json:"other_spdx_license_keys"`
+	OsiLicenseKey        string   `json:"osi_license_key"`
+	TextUrls             []string `json:"text_urls"`
+	OsiURL               string   `json:"osi_url"`
+	FaqURL               string   `json:"faq_url"`
+	OtherUrls            []string `json:"other_urls"`
+	IgnorableCopyrights  []string `json:"ignorable_copyrights"`
+	IgnorableHolders     []string `json:"ignorable_holders"`
+	Text                 string   `json:"text"`
+}
+
+type LicenseList []struct {
+	LicenseKey     string `json:"license_key"`
+	Category       string `json:"category"`
+	SpdxLicenseKey string `json:"spdx_license_key"`
+	IsException    bool   `json:"is_exception"`
+	IsDeprecated   bool   `json:"is_deprecated"`
+	JSON           string `json:"json"`
+	Yaml           string `json:"yaml"`
+	HTML           string `json:"html"`
+	License        string `json:"license"`
+}
+
 type KG_Dataset struct {
 	SubtitleNullable             string    `json:"subtitleNullable"`
 	CreatorNameNullable          string    `json:"creatorNameNullable"`
@@ -137,6 +169,90 @@ type HF_Dataset struct {
 	Tags             []string `json:"tags"`
 	Siblings         string   `json:"siblings"`
 	Key              string   `json:"key"`
+}
+
+func license_dump() {
+	var licenses LicenseList
+	var licenseDetail LicenseDetail
+	file, err := os.Create("license.csv")
+	filepath := "license.csv"
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	file.WriteString("\xEF\xBB\xBF")
+	w1 := csv.NewWriter(file)
+	w1.Write([]string{
+		"id",
+		"license_name",
+		"license_fullname",
+		"license_link",
+		"license_category",
+		"license_text"})
+	w1.Flush()
+	url := "https://scancode-licensedb.aboutcode.org/index.json"
+	method := "GET"
+	client := &http.Client{}
+	req, _ := http.NewRequest(method, url, nil)
+	file, err = os.OpenFile(filepath, os.O_WRONLY|os.O_APPEND, 0666)
+	w1 = csv.NewWriter(file)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	// for _, l := range link.ParseResponse(res) {
+	// 	//fmt.Printf("URI: %q, Rel: %q, Extra: %+v\n", l.URI, l.Rel, l.Extra)
+	// 	// URI: "https://api.github.com/search/code?q=Println+user%3Agolang&page=2", Rel: "next", Extra: map[]
+	// 	// URI: "https://api.github.com/search/code?q=Println+user%3Agolang&page=34", Rel: "last", Extra: map[]
+	// 	if l.Rel == "next" {
+	// 		url = l.URI
+	// 	}
+	// }
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	json.Unmarshal(body, &licenses)
+	for i, license := range licenses {
+		url := "https://scancode-licensedb.aboutcode.org/" + license.LicenseKey + ".json"
+		method := "GET"
+		client := &http.Client{}
+		req, _ := http.NewRequest(method, url, nil)
+		res1, err := client.Do(req)
+		fmt.Println("new dump:" + url)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer res1.Body.Close()
+		body1, err := io.ReadAll(res1.Body)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		json.Unmarshal(body1, &licenseDetail)
+		w1.Write([]string{
+			strconv.Itoa(i),
+			license.LicenseKey,
+			license.SpdxLicenseKey,
+			licenseDetail.HomepageURL,
+			licenseDetail.Category,
+			licenseDetail.Text,
+		})
+		w1.Flush()
+	}
+	if link.ParseResponse(res) == nil {
+		w1.Flush()
+		return
+	}
 }
 
 func huggingface_dump() {
@@ -424,6 +540,7 @@ func Bool2int(b bool) int {
 
 func main() {
 	//initdump()
-	huggingface_dump()
+	//huggingface_dump()
 	//kaggle_dump()
+	license_dump()
 }
