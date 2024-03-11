@@ -207,14 +207,6 @@ func license_dump() {
 	}
 	defer res.Body.Close()
 
-	// for _, l := range link.ParseResponse(res) {
-	// 	//fmt.Printf("URI: %q, Rel: %q, Extra: %+v\n", l.URI, l.Rel, l.Extra)
-	// 	// URI: "https://api.github.com/search/code?q=Println+user%3Agolang&page=2", Rel: "next", Extra: map[]
-	// 	// URI: "https://api.github.com/search/code?q=Println+user%3Agolang&page=34", Rel: "last", Extra: map[]
-	// 	if l.Rel == "next" {
-	// 		url = l.URI
-	// 	}
-	// }
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
